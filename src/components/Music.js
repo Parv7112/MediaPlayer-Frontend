@@ -3,6 +3,7 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadAudio, fetchAllAudio } from '../redux/actions/musicActions';
 import { useNavigate } from 'react-router-dom';
+import { AiFillPlusCircle } from 'react-icons/ai'
 
 function Music() {
     const navigate = useNavigate();
@@ -12,13 +13,12 @@ function Music() {
 
     const dispatch = useDispatch();
     const audioFiles = useSelector(state => {
-        console.log(state.audio.audioFiles)
         return state.audio.audioFiles
     });
 
     useEffect(() => {
         setTimeout(() => {
-            console.log(audioFiles)
+            // console.log(audioFiles)
         }, 1000);
     }, [audioFiles])
 
@@ -51,6 +51,7 @@ function Music() {
             await dispatch(uploadAudio(formData));
 
             handleUploadModalClose();
+            window.location.reload()
             showSuccessMessage('Audio file uploaded successfully', 5000);
         } catch (error) {
             console.error('Error uploading music:', error);
@@ -67,9 +68,9 @@ function Music() {
 
     return (
         <div className='mt-5 mx-3'>
-            <Button variant="primary" onClick={handleUploadModalShow}>
-                Upload Audio
-            </Button>
+            {/* <Button className="position-fixed bottom-0 end-0 p-3 rounded-circle z-3 bg-dark" onClick={handleUploadModalShow}> */}
+            <AiFillPlusCircle  className='position-fixed bottom-0 end-0 display-4 z-3 m-3' onClick={handleUploadModalShow}/>
+        {/* </Button> */}
 
             <Modal show={showUploadModal} onHide={handleUploadModalClose}>
                 <Modal.Header closeButton>

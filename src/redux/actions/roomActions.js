@@ -1,3 +1,4 @@
+// redux/actions/roomActions.js
 import axios from 'axios';
 
 export const createRoom = (name, number) => async (dispatch) => {
@@ -7,7 +8,7 @@ export const createRoom = (name, number) => async (dispatch) => {
       number,
     });
     const roomId = response.data.roomId;
-    dispatch({ type: 'CREATE_ROOM_SUCCESS', payload: { roomId } }); // Dispatch the success action
+    dispatch({ type: 'CREATE_ROOM_SUCCESS', payload: { roomId } });
     return response;
   } catch (error) {
     console.error('Error creating room:', error);
@@ -15,12 +16,19 @@ export const createRoom = (name, number) => async (dispatch) => {
   }
 };
 
-
-export const fetchRoomId = () => async (dispatch) => {
+export const fetchRoomId = (roomId) => async (dispatch) => {
   try {
-    const response = await axios.get('http://localhost:4000/room/getRoomId'); 
-    const roomId = response.data.roomId; 
-    dispatch({ type: 'FETCH_ROOM_ID_SUCCESS', payload: { roomId } });
+    if (!roomId) {
+      // Handle the case where roomId is not defined (optional)
+      console.error('RoomId is not defined.');
+      return;
+    }
+
+    const response = await axios.get(`http://localhost:4000/room/getRoom/${roomId}`);
+    const fetchedRoomId = response.data.roomId;
+    const name = response.data.name;
+
+    dispatch({ type: 'FETCH_ROOM_ID_SUCCESS', payload: { roomId: fetchedRoomId, name } });
   } catch (error) {
     console.error('Error fetching roomId:', error);
   }
@@ -35,15 +43,16 @@ export const joinRoom = (roomId) => async (dispatch) => {
     if (response && response.data) {
       dispatch({
         type: 'JOIN_ROOM_SUCCESS',
-        payload: { message: response.data.message },
+        payload: {
+          message: response.data.message,
+          room: response.data.data,
+          name: response.data.name,
+        },
       });
     } else {
-      console.log(response)
-      throw new Error('Failed to join room: Server response indicates an error');
+      console.error('Failed to join room: Server response indicates an error');
     }
   } catch (error) {
-    console.log(error)
-    throw error;
+    console.error('Error joining room:', error);
   }
 };
-

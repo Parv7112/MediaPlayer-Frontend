@@ -3,13 +3,26 @@ import app from '../Firebase';
 import { GoogleAuthProvider, getAuth, getRedirectResult, signInWithRedirect, signOut } from 'firebase/auth';
 import Dropdown from 'react-bootstrap/Dropdown';
 import Spinner from 'react-bootstrap/Spinner';
+import { onAuthStateChanged } from "firebase/auth";
+
 
 const provider = new GoogleAuthProvider();
 
 function Auth() {
   const auth = getAuth(app);
-  const [loading, setLoading] = useState(true); 
+  const [loading, setLoading] = useState(true);
   const [authentication, setAuthentication] = useState(false)
+
+  useEffect(() => {
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        setAuthentication(true)
+      }
+      else {
+        setAuthentication(false)
+      }
+    })
+  }, [])
 
   const handleGoogleSignIn = () => {
     signInWithRedirect(auth, provider);
@@ -26,13 +39,13 @@ function Auth() {
         const user = result.user;
         setLoading(false);
         if (user) {
-          setAuthentication(true); // Set authentication to true when user is logged in
+          setAuthentication(true);
         }
         console.log(user, auth.currentUser)
       })
       .catch((error) => {
         console.log(error);
-        setLoading(false); 
+        setLoading(false);
       });
   }, [auth]);
 
@@ -45,9 +58,8 @@ function Auth() {
       ) : (
         authentication ? (
           <Dropdown>
-            <Dropdown.Toggle variant="secondary" id="dropdown-basic" className='header-bg text-black fs-4 fw-bold'>
-              <img src={auth.currentUser.photoURL} alt="Not Found" className='auth-img mx-2'/>
-              {auth.currentUser.displayName}
+            <Dropdown.Toggle variant='none' id="dropdown-basic" className='header-profile text-black rounded-circle '>
+              <img src={auth.currentUser.photoURL} alt="Not Found" className='auth-img' />
             </Dropdown.Toggle>
 
             <Dropdown.Menu>

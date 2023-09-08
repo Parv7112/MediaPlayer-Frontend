@@ -1,6 +1,6 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
-import roomReducer from './reducers/roomReducer';
+import roomReducer from './slices/roomSlice';
 import musicSlice from './slices/musicSlice';
 
 const rootReducer = combineReducers({

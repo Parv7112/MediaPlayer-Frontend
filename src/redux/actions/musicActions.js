@@ -24,7 +24,6 @@ export const fetchAllAudio = () => async (dispatch) => {
   try {
     const response = await axios.get('http://localhost:4000/music/getMusic');
     dispatch(fetchAllAudioSuccess(response.data));
-    console.log(response.data)
   } catch (error) {
     console.error('Error fetching audio:', error);
   }

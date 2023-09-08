@@ -17,6 +17,14 @@
     border: none;
 }
 
+.header-profile {
+    border: none;
+}
+
+.header-profile:hover, .header-profile:active {
+    border: none;
+}
+
 .navbar {
     background-color: lightblue;
 }
@@ -30,4 +38,9 @@
     top: 0;
     left: 0;
     right: 0;
+}
+
+
+.header-profile.text-black::after {
+    display: none;
 }
