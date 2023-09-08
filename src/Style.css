@@ -1,0 +1,33 @@
+.auth-img {
+    max-width: 3rem;
+    max-height: 3rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.logo {
+    max-width: 4rem;
+    max-height: 4rem;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.header-bg {
+    background-color: lightblue;
+    border: none;
+}
+
+.navbar {
+    background-color: lightblue;
+}
+
+.success-message {
+    background-color: green;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+}
