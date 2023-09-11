@@ -50,9 +50,9 @@ export const joinRoom = (roomId) => async (dispatch) => {
         },
       });
     } else {
-      console.error('Failed to join room: Server response indicates an error');
+      throw new Error('Failed to join room: Server response indicates an error');
     }
   } catch (error) {
-    console.error('Error joining room:', error);
+    throw error;
   }
 };

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { createRoom, joinRoom } from '../redux/actions/roomActions';
 import Logo from '../assets/logo.png';
 import Auth from './Auth';
+import { getAuth } from 'firebase/auth'; // Import Firebase auth hook
 
 const Header = () => {
   const navigate = useNavigate();
@@ -27,6 +28,16 @@ const Header = () => {
     try {
       const response = await dispatch(createRoom(name, number));
       console.log('Create Room Response:', response);
+
+      const auth = getAuth(); // Initialize Firebase auth
+      const user = auth.currentUser; // Get the currently logged-in user
+    
+      if (!user) {
+        // User is not logged in, show a message to log in first
+        alert('Please log in first to create a room.');
+        return;
+      }
+  
   
       if (response && response.data && response.data.roomId) {
         const createdRoomId = response.data.roomId; // Use a different variable name here
@@ -45,6 +56,15 @@ const Header = () => {
   };
   
   const handleJoinRoom = async () => {
+    const auth = getAuth(); // Initialize Firebase auth
+    const user = auth.currentUser; // Get the currently logged-in user
+  
+    if (!user) {
+      // User is not logged in, show a message to log in first
+      alert('Please log in first to join a room.');
+      return;
+    }
+  
     if (isRoomIdEntered) {
       try {
         await dispatch(joinRoom(roomId, name));
@@ -52,7 +72,7 @@ const Header = () => {
         navigate(`/room/${roomId}`);
         handleJoinModalClose();
       } catch (error) {
-        console.error('Error joining room:', error);
+        alert('Room Not Found')
       }
     }
   };
