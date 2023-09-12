@@ -44,3 +44,23 @@
 .header-profile.text-black::after {
     display: none;
 }
+
+.songs-container {
+    margin-bottom: 15rem;
+}
+
+.audio-controls {
+    width: 78.5%;
+}
+
+.play-button {
+    border: none;
+    font-size: 50px;
+    margin-top: -1.5rem;
+}
+
+.stop-button {
+    border: none;
+    font-size: 40px;
+    margin-top: -1.5rem;
+}

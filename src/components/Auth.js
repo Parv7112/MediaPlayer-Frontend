@@ -17,13 +17,12 @@ function Auth() {
       setUser(user);
       setLoading(false);
       if (user) {
-        // Send user data to your backend
         sendUserDataToBackend(user);
       }
     });
 
     return () => {
-      unsubscribe(); // Unsubscribe from the auth state changes when the component unmounts
+      unsubscribe();
     };
   }, [auth]);
 
@@ -36,19 +35,16 @@ function Auth() {
   };
 
   const sendUserDataToBackend = async (user) => {
-    // Create an object with the user data you want to send
     const userData = {
       uid: user.uid,
       displayName: user.displayName,
       email: user.email,
-      // Add any other user data you want to send
     };
 
     try {
-      const idToken = await user.getIdToken(); // Retrieve the ID token
+      const idToken = await user.getIdToken(); 
       console.log('ID Token:', idToken);
 
-      // Send user data to your backend using Axios
       const response = await axios.post('http://localhost:4000/auth/sendUserData', { token: idToken, userData });
       console.log('User data sent successfully:', response.data);
     } catch (error) {

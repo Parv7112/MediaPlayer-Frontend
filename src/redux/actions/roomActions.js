@@ -1,4 +1,3 @@
-// redux/actions/roomActions.js
 import axios from 'axios';
 
 export const createRoom = (name, number) => async (dispatch) => {
@@ -19,7 +18,6 @@ export const createRoom = (name, number) => async (dispatch) => {
 export const fetchRoomId = (roomId) => async (dispatch) => {
   try {
     if (!roomId) {
-      // Handle the case where roomId is not defined (optional)
       console.error('RoomId is not defined.');
       return;
     }

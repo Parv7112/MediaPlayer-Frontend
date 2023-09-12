@@ -6,12 +6,11 @@ import { createRoom, joinRoom } from '../redux/actions/roomActions';
 import Logo from '../assets/logo.png';
 import Auth from './Auth';
 import { getAuth } from 'firebase/auth';
-import { fetchRoomIdSuccess } from '../redux/slices/roomSlice'; // Import the Redux action
+import { fetchRoomIdSuccess } from '../redux/slices/roomSlice'; 
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [name, setName] = useState('');
@@ -19,7 +18,7 @@ const Header = () => {
   const [roomId, setRoomId] = useState('');
   const [roomCreated, setRoomCreated] = useState(false);
   const [isRoomIdEntered, setIsRoomIdEntered] = useState(false);
-  const roomData = useSelector((state) => state.room); // Get room data from Redux store
+  const roomData = useSelector((state) => state.room); 
 
   const handleHomeClick = () => {
     navigate('/');
@@ -27,7 +26,7 @@ const Header = () => {
   };
 
   useEffect(() => {
-    // Fetch room data when the component mounts
+    
     const fetchRoomData = async () => {
       try {
         const response = await fetch(`http://localhost:4000/room/getRoom/${roomId}`);
@@ -38,7 +37,6 @@ const Header = () => {
         const data = await response.json();
         console.log('Fetched Room Data:', data);
 
-        // Dispatch the action to store the room data in the Redux store
         dispatch(fetchRoomIdSuccess(data.room));
       } catch (error) {
         console.error('Error fetching room data:', error);
