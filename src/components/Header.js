@@ -21,32 +21,31 @@ const Header = () => {
 
   const handleHomeClick = () => {
     navigate('/');
-    window.location.reload()
-  }
+    window.location.reload();
+  };
 
   const handleCreateRoom = async () => {
     try {
-      const response = await dispatch(createRoom(name, number));
-      console.log('Create Room Response:', response);
-
       const auth = getAuth(); // Initialize Firebase auth
       const user = auth.currentUser; // Get the currently logged-in user
-    
+
       if (!user) {
         // User is not logged in, show a message to log in first
         alert('Please log in first to create a room.');
         return;
       }
-  
-  
+
+      const response = await dispatch(createRoom(name, number));
+      console.log('Create Room Response:', response);
+
       if (response && response.data && response.data.roomId) {
         const createdRoomId = response.data.roomId; // Use a different variable name here
         setRoomCreated(true);
         setRoomId(createdRoomId); // Use the createdRoomId
-  
+
         // Navigate after setting the room ID
         navigate(`/room/${createdRoomId}`);
-        
+
         // Close the modal after navigation
         handleCreateModalClose();
       }
@@ -54,28 +53,46 @@ const Header = () => {
       console.error('Error creating room:', error);
     }
   };
-  
+
   const handleJoinRoom = async () => {
-    const auth = getAuth(); // Initialize Firebase auth
-    const user = auth.currentUser; // Get the currently logged-in user
-  
-    if (!user) {
-      // User is not logged in, show a message to log in first
-      alert('Please log in first to join a room.');
-      return;
-    }
-  
-    if (isRoomIdEntered) {
-      try {
-        await dispatch(joinRoom(roomId, name));
-        console.log('Successfully joined the room');
-        navigate(`/room/${roomId}`);
-        handleJoinModalClose();
-      } catch (error) {
-        alert('Room Not Found')
+    try {
+      const auth = getAuth(); // Initialize Firebase auth
+      const user = auth.currentUser; // Get the currently logged-in user
+
+      if (!user) {
+        // User is not logged in, show a message to log in first
+        alert('Please log in first to join a room.');
+        return;
       }
+  
+      const response = await fetch('http://localhost:4000/room/addParticipant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId: roomId,
+          participant: {
+            uid: user.uid, // Include user's UID
+            displayName: user.displayName,
+            email: user.email,
+          },
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to join room');
+      }
+  
+      const data = await response.json();
+      console.log('Joined room:', data);
+      navigate(`/room/${roomId}`);
+      handleJoinModalClose(true);
+    } catch (error) {
+      console.error('Error joining room:', error);
     }
   };
+  
 
   const handleCreateModalClose = () => {
     setShowCreateModal(false);
