@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button, Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { createRoom, joinRoom } from '../redux/actions/roomActions';
 import Logo from '../assets/logo.png';
 import Auth from './Auth';
-import { getAuth } from 'firebase/auth'; // Import Firebase auth hook
+import { getAuth } from 'firebase/auth';
+import { fetchRoomIdSuccess } from '../redux/slices/roomSlice'; // Import the Redux action
 
 const Header = () => {
   const navigate = useNavigate();
@@ -18,19 +19,43 @@ const Header = () => {
   const [roomId, setRoomId] = useState('');
   const [roomCreated, setRoomCreated] = useState(false);
   const [isRoomIdEntered, setIsRoomIdEntered] = useState(false);
+  const roomData = useSelector((state) => state.room); // Get room data from Redux store
 
   const handleHomeClick = () => {
     navigate('/');
     window.location.reload();
   };
 
+  useEffect(() => {
+    // Fetch room data when the component mounts
+    const fetchRoomData = async () => {
+      try {
+        const response = await fetch(`http://localhost:4000/room/getRoom/${roomId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch room data');
+        }
+
+        const data = await response.json();
+        console.log('Fetched Room Data:', data);
+
+        // Dispatch the action to store the room data in the Redux store
+        dispatch(fetchRoomIdSuccess(data.room));
+      } catch (error) {
+        console.error('Error fetching room data:', error);
+      }
+    };
+
+    if (roomId) {
+      fetchRoomData();
+    }
+  }, [dispatch, roomId]);
+
   const handleCreateRoom = async () => {
     try {
-      const auth = getAuth(); // Initialize Firebase auth
-      const user = auth.currentUser; // Get the currently logged-in user
-
+      const auth = getAuth();
+      const user = auth.currentUser; 
+     
       if (!user) {
-        // User is not logged in, show a message to log in first
         alert('Please log in first to create a room.');
         return;
       }
@@ -39,14 +64,12 @@ const Header = () => {
       console.log('Create Room Response:', response);
 
       if (response && response.data && response.data.roomId) {
-        const createdRoomId = response.data.roomId; // Use a different variable name here
+        const createdRoomId = response.data.roomId; 
         setRoomCreated(true);
-        setRoomId(createdRoomId); // Use the createdRoomId
+        setRoomId(createdRoomId); 
 
-        // Navigate after setting the room ID
         navigate(`/room/${createdRoomId}`);
 
-        // Close the modal after navigation
         handleCreateModalClose();
       }
     } catch (error) {
@@ -56,11 +79,10 @@ const Header = () => {
 
   const handleJoinRoom = async () => {
     try {
-      const auth = getAuth(); // Initialize Firebase auth
-      const user = auth.currentUser; // Get the currently logged-in user
+      const auth = getAuth(); 
+      const user = auth.currentUser; 
 
       if (!user) {
-        // User is not logged in, show a message to log in first
         alert('Please log in first to join a room.');
         return;
       }
@@ -73,7 +95,7 @@ const Header = () => {
         body: JSON.stringify({
           roomId: roomId,
           participant: {
-            uid: user.uid, // Include user's UID
+            uid: user.uid, 
             displayName: user.displayName,
             email: user.email,
           },
@@ -92,6 +114,48 @@ const Header = () => {
       console.error('Error joining room:', error);
     }
   };
+
+  const handleExitRoom = async () => {
+    const roomId = roomData.fetchedRoomId
+    console.log(roomData.fetchedRoomId)
+    try {
+      const auth = getAuth();
+      const user = auth.currentUser;
+  
+      if (!user) {
+        alert('Please log in first.');
+        return;
+      }
+  
+      console.log('Exit Room Request Data:', roomId, user.email);
+  
+      const response = await fetch('http://localhost:4000/room/removeParticipant', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          roomId: roomId,
+          participant: {
+            uid: user.uid,
+            email: user.email,
+          },
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to exit the room');
+      }
+  
+      const data = await response.json();
+      console.log('Exited the room:', data);
+      navigate('/');
+    } catch (error) {
+      console.error('Error exiting the room:', error);
+    }
+  };
+  
+  
   
 
   const handleCreateModalClose = () => {
@@ -135,7 +199,7 @@ const Header = () => {
                 </li>
               </> : <>
                 <li className="nav-item">
-                  <Button variant="secondary" className='nav-link' onClick={handleHomeClick}>
+                  <Button variant="secondary" className='nav-link' onClick={handleExitRoom}>
                     Exit Room
                   </Button>
                 </li>
