@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Form, Col } from 'react-bootstrap';
+import { Modal, Button, Form } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadAudio, fetchAllAudio } from '../redux/actions/musicActions';
 import { useNavigate } from 'react-router-dom';
-import { AiFillPlusCircle } from 'react-icons/ai';
 import {
     BsPlayCircleFill,
     BsFillPauseCircleFill,
     BsSkipStartFill,
     BsSkipEndFill,
-    BsFillXCircleFill, // Add the X button
+    BsFillXCircleFill,
 } from 'react-icons/bs';
+import { AiFillPlusCircle } from 'react-icons/ai'
 
 function Music() {
     const navigate = useNavigate();
@@ -24,8 +24,8 @@ function Music() {
     const [progress, setProgress] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [totalDuration, setTotalDuration] = useState(0);
-    const [currentSongIndex, setCurrentSongIndex] = useState(-1); // Track the current song index
-    const [showAudioControls, setShowAudioControls] = useState(false); // Track if audio controls section should be visible
+    const [currentSongIndex, setCurrentSongIndex] = useState(-1);
+    const [showAudioControls, setShowAudioControls] = useState(false);
 
     const dispatch = useDispatch();
     const audioFiles = useSelector((state) => {
@@ -93,7 +93,7 @@ function Music() {
 
         setIsPlaying(!isPlaying);
 
-        setCurrentSongIndex(index); // Set the current song index
+        setCurrentSongIndex(index);
 
         audioControls.current.forEach((control, i) => {
             if (i !== index && control !== null) {
@@ -105,17 +105,29 @@ function Music() {
 
         audio.addEventListener('playing', () => {
             setIsLoading(false);
-            setTotalDuration(audio.duration); // Set the total duration when audio starts playing
-            setShowAudioControls(true); // Show the audio controls section when audio starts playing
+            setTotalDuration(audio.duration);
+            setShowAudioControls(true);
         });
 
         audio.addEventListener('ended', () => {
             setCurrentSong('');
             setIsPlaying(false);
-            setCurrentTime(0); // Reset current time when the audio ends
+            setCurrentTime(0);
+
+            // Play the next song automatically if available
+            const nextIndex = currentSongIndex + 1;
+            if (nextIndex < audioFiles.length) {
+                const nextAudio = audioControls.current[nextIndex];
+                if (nextAudio) {
+                    playAudio(
+                        `http://localhost:4000/music/getMusic/${audioFiles[nextIndex].uniqueId}`,
+                        audioFiles[nextIndex].name.slice(0, audioFiles[nextIndex].name.length - 4),
+                        nextIndex
+                    );
+                }
+            }
         });
 
-        // Add event listener for timeupdate to update progress and current time
         audio.addEventListener('timeupdate', () => {
             setProgress((audio.currentTime / audio.duration) * 100);
             setCurrentTime(audio.currentTime);
@@ -182,6 +194,20 @@ function Music() {
         }
     };
 
+    const handleProgressChange = (e) => {
+        const newProgress = parseFloat(e.target.value);
+        const newTime = (newProgress / 100) * totalDuration;
+        setCurrentTime(newTime);
+        setProgress(newProgress);
+    
+        if (currentAudio) {
+            currentAudio.currentTime = newTime;
+            if (isPlaying) {
+                currentAudio.play();
+            }
+        }
+    };
+    
     return (
         <div className="container mt-5">
             <AiFillPlusCircle
@@ -223,7 +249,7 @@ function Music() {
                 <ul className="list-group">
                     {audioFiles?.length > 0 ? (
                         audioFiles.map((audio, index) => (
-                            <li className="list-group-item my-2" key={audio._id}>
+                            <li className="list-group-item my-2 pointer" key={audio._id}>
                                 <h4
                                     className="mb-2"
                                     onClick={() =>
@@ -247,7 +273,7 @@ function Music() {
                     )}
                 </ul>
             </div>
-            {showAudioControls && ( // Show audio controls section only when needed
+            {showAudioControls && (
                 <div className="card position-fixed bottom-0 audio-controls p-3 pe-5 bg-light">
                     {currentSong && (
                         <div>
@@ -255,8 +281,15 @@ function Music() {
                                 <h3>{currentSong}</h3>
                             </div>
                             <br />
-                            <div className="d-flex justify-content-center align-items-center">
-                                <progress max="100" className="w-100" value={progress}></progress>
+                             <div className="d-flex justify-content-center align-items-center">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="100"
+                                    value={progress}
+                                    onChange={handleProgressChange}
+                                    className="w-100"
+                                />
                             </div>
                             <div className="d-flex justify-content-between align-items-center">
                                 <span>{formatTime(currentTime)}</span>

@@ -64,3 +64,11 @@
     font-size: 40px;
     margin-top: -1.5rem;
 }
+
+.progress-bar {
+    color: black;
+}
+
+.pointer {
+    cursor: pointer;
+}

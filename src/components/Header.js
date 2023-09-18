@@ -148,13 +148,11 @@ const Header = () => {
       const data = await response.json();
       console.log('Exited the room:', data);
       navigate('/');
+      window.location.reload()
     } catch (error) {
       console.error('Error exiting the room:', error);
     }
   };
-  
-  
-  
 
   const handleCreateModalClose = () => {
     setShowCreateModal(false);
