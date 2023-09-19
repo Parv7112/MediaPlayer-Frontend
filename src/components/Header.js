@@ -7,6 +7,7 @@ import Logo from '../assets/logo.png';
 import Auth from './Auth';
 import { getAuth } from 'firebase/auth';
 import { fetchRoomIdSuccess } from '../redux/slices/roomSlice'; 
+import socketIOClient from 'socket.io-client';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Header = () => {
   const [roomCreated, setRoomCreated] = useState(false);
   const [isRoomIdEntered, setIsRoomIdEntered] = useState(false);
   const roomData = useSelector((state) => state.room); 
+  const [socket, setSocket] = useState(null);
 
   const handleHomeClick = () => {
     navigate('/');
@@ -26,7 +28,17 @@ const Header = () => {
   };
 
   useEffect(() => {
-    
+    // Connect to the socket server when the component mounts
+    const socket = socketIOClient('http://localhost:4000'); // Replace with your server's URL
+    setSocket(socket);
+
+    // Clean up the socket connection when the component unmounts
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {    
     const fetchRoomData = async () => {
       try {
         const response = await fetch(`http://localhost:4000/room/getRoom/${roomId}`);
@@ -99,7 +111,11 @@ const Header = () => {
           },
         }),
       });
-  
+
+      if (socket) {
+        socket.emit('joinRoom', roomId); // Replace 'joinRoom' with your desired event name
+      }
+      
       if (!response.ok) {
         throw new Error('Failed to join room');
       }

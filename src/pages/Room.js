@@ -57,7 +57,7 @@ function RoomPage() {
         </nav>
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
           <h1 className='text-center mt-2'>{name} - {roomId}</h1>
-          <Music />
+          <Music roomId={roomId} />
         </main>
       </div>
     </div>
