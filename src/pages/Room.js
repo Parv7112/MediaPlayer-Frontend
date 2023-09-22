@@ -16,7 +16,7 @@ function RoomPage() {
 
   useEffect(() => {
     if (roomId && initial) {
-      const socket = socketIOClient('http://localhost:4000'); // Replace with your server's URL
+      const socket = socketIOClient('http://localhost:4000');
 
       const fetchRoomData = async () => {
         try {
@@ -26,14 +26,13 @@ function RoomPage() {
           }
 
           const data = await response.json();
-          // console.log('API Response:', data);
 
           dispatch(fetchRoomIdSuccess(data.room));
 
           setParticipants(data.room.participants);
           console.log(socket)
           setSocket(socket)
-          setSocketReady(true); // Mark the socket as ready
+          setSocketReady(true); 
 
           if (socket) {
             socket.emit('joinRoom', roomId);
@@ -73,7 +72,7 @@ function RoomPage() {
         </nav>
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
           <h1 className='text-center mt-2'>{name} - {roomId}</h1>
-          {socketReady && <Music socket={socket} roomId={roomId} />} {/* Render Music component when socket is ready */}
+          {socketReady && <Music socket={socket} roomId={roomId} />}
         </main>
       </div>
     </div>

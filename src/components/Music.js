@@ -25,33 +25,6 @@ function Music({ socket, roomId }) {
 
     const audioRefs = useRef([]);
 
-    // useEffect(() => {
-    //     dispatch(fetchAllAudio());
-    //     console.log(roomId)
-    //     socket.on('playSong', ({ songIndex, roomId }) => {
-    //         // console.log('Received playSong event:', { songIndex, roomId });
-    //         // console.log({ songIndex, currentSongIndex })
-    //         // console.log(currentSongIndex)
-    //         if (songIndex !== null) {
-    //             // console.log(currentSongIndex)
-    //             // if(currentSongIndex === -1)
-    //             console.log('Emitting playSong event:', { roomId: roomId, songIndex: songIndex });
-    //             // socket.emit('playSong', { roomId: roomId, songIndex: songIndex });
-    //             // setCurrentSongIndex(songIndex);
-    //             // playSongByIndex(songIndex);
-    //             // console.log('After updating currentSongIndex:', currentSongIndex);
-    //             console.log('Received playSong event:', { roomId: roomId, songIndex: songIndex });
-    //         } else {
-    //             console.error(`Received 'playSong' event with null songIndex or the same song in room ${roomId}`);
-    //         }
-    //     });
-
-    //     return () => {
-    //         socket.off('playSong');
-    //     };
-    // }, [currentSongIndex]);
-
-
     useEffect(() => {
         dispatch(fetchAllAudio());
         console.log(roomId);
@@ -59,8 +32,8 @@ function Music({ socket, roomId }) {
         socket.on('playSong', ({ songIndex, roomId }) => {
             if (songIndex !== null) {
                 console.log('Received playSong event:', { roomId: roomId, songIndex: songIndex });
-                setCurrentSongIndex(songIndex); // Update the currentSongIndex
-                playSongByIndex(songIndex); // Call playSongByIndex with the received songIndex
+                setCurrentSongIndex(songIndex);
+                playSongByIndex(songIndex);
             } else {
                 console.error(`Received 'playSong' event with null songIndex or the same song in room ${roomId}`);
             }
