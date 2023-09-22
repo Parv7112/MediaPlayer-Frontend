@@ -26,7 +26,7 @@ function RoomPage() {
           }
 
           const data = await response.json();
-          console.log('API Response:', data);
+          // console.log('API Response:', data);
 
           dispatch(fetchRoomIdSuccess(data.room));
 

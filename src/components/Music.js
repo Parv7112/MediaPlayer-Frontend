@@ -151,7 +151,9 @@ function Music({ socket, roomId }) {
 
             try {
             if (audio.readyState >= 2) {
+                setTimeout(() => {
                     audio.play();
+                }, 0);
                     setIsPlaying(true);
                 } else {
                     audio.addEventListener('canplay', () => {
