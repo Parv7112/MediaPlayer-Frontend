@@ -3,15 +3,22 @@ import { useParams } from 'react-router-dom';
 import Music from '../components/Music';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchRoomIdSuccess } from '../redux/slices/roomSlice';
+import socketIOClient from 'socket.io-client';
 
 function RoomPage() {
   const { roomId } = useParams();
   const name = useSelector((state) => state.room.name);
   const dispatch = useDispatch();
   const [participants, setParticipants] = useState([]);
+  const [socket, setSocket] = useState(null);
+  const [initial, setInitial] = useState(true)
+  const [socketReady, setSocketReady] = useState(false);
+  const [currentSongIndex, setCurrentSongIndex] = useState(null);
 
   useEffect(() => {
-    if (roomId) {
+    if (roomId && initial) {
+      const socket = socketIOClient('http://localhost:4000'); // Replace with your server's URL
+
       const fetchRoomData = async () => {
         try {
           const response = await fetch(`http://localhost:4000/room/getRoom/${roomId}`);
@@ -25,14 +32,24 @@ function RoomPage() {
           dispatch(fetchRoomIdSuccess(data.room));
 
           setParticipants(data.room.participants);
+          console.log(socket)
+          setSocket(socket)
+          setSocketReady(true); // Mark the socket as ready
+
+          if (socket) {
+            socket.emit('joinRoom', roomId);
+          }
+    
         } catch (error) {
           console.error('Error fetching room data:', error);
         }
       };
 
+      setInitial(false)
+
       fetchRoomData();
     }
-  }, [dispatch, roomId]);
+  }, [roomId]);
 
   return (
     <div className="container-fluid">
@@ -57,7 +74,7 @@ function RoomPage() {
         </nav>
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
           <h1 className='text-center mt-2'>{name} - {roomId}</h1>
-          <Music roomId={roomId} />
+          {socketReady && <Music socket={socket} roomId={roomId} {...{currentSongIndex, setCurrentSongIndex}} />} {/* Render Music component when socket is ready */}
         </main>
       </div>
     </div>

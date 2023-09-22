@@ -43,7 +43,7 @@ function Auth() {
 
     try {
       const idToken = await user.getIdToken(); 
-      console.log('ID Token:', idToken);
+      // console.log('ID Token:', idToken);
 
       const response = await axios.post('http://localhost:4000/auth/sendUserData', { token: idToken, userData });
       console.log('User data sent successfully:', response.data);

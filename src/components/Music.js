@@ -10,9 +10,9 @@ import {
     BsSkipEndFill,
     BsFillXCircleFill,
 } from 'react-icons/bs';
-import { AiFillPlusCircle } from 'react-icons/ai'
+import { AiFillPlusCircle } from 'react-icons/ai';
 
-function Music() {
+function Music({ socket, roomId, currentSongIndex, setCurrentSongIndex }) {
     const navigate = useNavigate();
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -24,25 +24,39 @@ function Music() {
     const [progress, setProgress] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [totalDuration, setTotalDuration] = useState(0);
-    const [currentSongIndex, setCurrentSongIndex] = useState(-1);
+    // const [currentSongIndex, setCurrentSongIndex] = useState(null);
     const [showAudioControls, setShowAudioControls] = useState(false);
-
     const dispatch = useDispatch();
-    const audioFiles = useSelector((state) => {
-        return state.audio.audioFiles;
-    });
+    const audioFiles = useSelector((state) => state.audio.audioFiles);
 
-    const audioControls = useRef([]);
+    const audioRefs = useRef([]); // Use audioRefs instead of audioControls
 
     useEffect(() => {
-        setTimeout(() => {
-            // console.log(audioFiles)
-        }, 1000);
-    }, [audioFiles]);
-
-    useEffect(() => {
+        // Fetch audio files when the component mounts
         dispatch(fetchAllAudio());
-    }, [dispatch]);
+        // Set up Socket.io event listeners
+        console.log(roomId)
+
+        // socket.on('message', ()=>console.log('first'))
+
+        socket.on('playSong', ({ songIndex, roomId }) => {
+            console.log('Received playSong event:', { songIndex, roomId });
+            console.log({songIndex, currentSongIndex})
+            if (songIndex !== null && songIndex !== currentSongIndex) {
+                // if(currentSongIndex === null)
+                    // playSongByIndex(songIndex);
+                setCurrentSongIndex(songIndex);
+            } else {
+                console.error(`Received 'playSong' event with null songIndex or the same song in room ${roomId}`);
+            }
+        });
+    
+        // Clean up the event listener when the component unmounts
+        return () => {
+            socket.off('playSong');
+        };
+    }, []);
+    
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
@@ -69,71 +83,82 @@ function Music() {
             await dispatch(uploadAudio(formData));
 
             handleUploadModalClose();
-            window.location.reload();
+            // Reload the audio list
+            dispatch(fetchAllAudio());
             showSuccessMessage('Audio file uploaded successfully', 5000);
         } catch (error) {
             console.error('Error uploading music:', error);
         }
     };
 
-    const playAudio = (audioUrl, audioName, index) => {
+    const playSongByIndex = (index) => {
+        console.log('playSongByIndex called with index:', index);
+        console.log('currentSongIndex:', currentSongIndex);
+        console.log(roomId)
+        if (currentSongIndex === index) {
+            return;
+        }
+    
+        // Pause the currently playing audio (if any)
         if (currentAudio) {
-            if (isPlaying) {
-                currentAudio.pause();
-            }
+            currentAudio.pause();
         }
-
-        const audio = audioControls.current[index];
-        setCurrentAudio(audio);
-        setCurrentSong(audioName);
-
-        if (!isPlaying) {
-            audio.play();
-        }
-
-        setIsPlaying(!isPlaying);
-
-        setCurrentSongIndex(index);
-
-        audioControls.current.forEach((control, i) => {
-            if (i !== index && control !== null) {
-                control.pause();
-            }
-        });
-
-        setIsLoading(true);
-
-        audio.addEventListener('playing', () => {
-            setIsLoading(false);
-            setTotalDuration(audio.duration);
-            setShowAudioControls(true);
-        });
-
-        audio.addEventListener('ended', () => {
-            setCurrentSong('');
-            setIsPlaying(false);
-            setCurrentTime(0);
-
-            // Play the next song automatically if available
-            const nextIndex = currentSongIndex + 1;
-            if (nextIndex < audioFiles.length) {
-                const nextAudio = audioControls.current[nextIndex];
-                if (nextAudio) {
-                    playAudio(
-                        `http://localhost:4000/music/getMusic/${audioFiles[nextIndex].uniqueId}`,
-                        audioFiles[nextIndex].name.slice(0, audioFiles[nextIndex].name.length - 4),
-                        nextIndex
-                    );
+    
+        const audio = audioRefs.current[index];
+    
+        if (audio) {
+            setCurrentAudio(audio);
+            setCurrentSong(audioFiles[index]?.name || '');
+    
+            const onPlaying = () => {
+                setIsLoading(false);
+                setTotalDuration(audio.duration);
+                audio.removeEventListener('playing', onPlaying);
+            };
+    
+            const onEnded = () => {
+                setCurrentSong('');
+                setIsPlaying(false);
+                setCurrentTime(0);
+    
+                // Play the next song if available
+                const nextIndex = currentSongIndex + 1;
+                if (nextIndex < audioFiles.length) {
+                    // playSongByIndex(/nextIndex);
                 }
+    
+                audio.removeEventListener('ended', onEnded);
+            };
+    
+            const onTimeUpdate = () => {
+                setProgress((audio.currentTime / audio.duration) * 100);
+                setCurrentTime(audio.currentTime);
+            };
+    
+            audio.addEventListener('playing', onPlaying);
+            audio.addEventListener('ended', onEnded);
+            audio.addEventListener('timeupdate', onTimeUpdate);
+    
+            // Play the selected audio if it's loaded
+            if (audio.readyState >= 2) {
+                audio.play();
+                setIsPlaying(true);
+            } else {
+                // If the audio is not loaded, add an event listener to play it when it's ready
+                audio.addEventListener('canplay', () => {
+                    audio.play();
+                    setIsPlaying(true);
+                });
             }
-        });
-
-        audio.addEventListener('timeupdate', () => {
-            setProgress((audio.currentTime / audio.duration) * 100);
-            setCurrentTime(audio.currentTime);
-        });
+    
+            setShowAudioControls(true);
+    
+            // Emit the 'playSong' event to all participants in the same room
+            console.log('Emitting playSong event:', { roomId: roomId, songIndex: index });
+            socket.emit('playSong', { roomId: roomId, songIndex: index });
+        }
     };
-
+    
     const togglePlayPause = () => {
         if (currentAudio) {
             if (isPlaying) {
@@ -169,28 +194,14 @@ function Music() {
     const playNextSong = () => {
         const nextIndex = currentSongIndex + 1;
         if (nextIndex < audioFiles.length) {
-            const nextAudio = audioControls.current[nextIndex];
-            if (nextAudio) {
-                playAudio(
-                    `http://localhost:4000/music/getMusic/${audioFiles[nextIndex].uniqueId}`,
-                    audioFiles[nextIndex].name.slice(0, audioFiles[nextIndex].name.length - 4),
-                    nextIndex
-                );
-            }
+            playSongByIndex(nextIndex);
         }
     };
 
     const playPreviousSong = () => {
         const previousIndex = currentSongIndex - 1;
         if (previousIndex >= 0) {
-            const previousAudio = audioControls.current[previousIndex];
-            if (previousAudio) {
-                playAudio(
-                    `http://localhost:4000/music/getMusic/${audioFiles[previousIndex].uniqueId}`,
-                    audioFiles[previousIndex].name.slice(0, audioFiles[previousIndex].name.length - 4),
-                    previousIndex
-                );
-            }
+            playSongByIndex(previousIndex);
         }
     };
 
@@ -199,7 +210,7 @@ function Music() {
         const newTime = (newProgress / 100) * totalDuration;
         setCurrentTime(newTime);
         setProgress(newProgress);
-    
+
         if (currentAudio) {
             currentAudio.currentTime = newTime;
             if (isPlaying) {
@@ -207,7 +218,7 @@ function Music() {
             }
         }
     };
-    
+
     return (
         <div className="container mt-5">
             <AiFillPlusCircle
@@ -252,18 +263,12 @@ function Music() {
                             <li className="list-group-item my-2 pointer" key={audio._id}>
                                 <h4
                                     className="mb-2"
-                                    onClick={() =>
-                                        playAudio(
-                                            `http://localhost:4000/music/getMusic/${audio.uniqueId}`,
-                                            audio.name.slice(0, audio.name.length - 4),
-                                            index
-                                        )
-                                    }
+                                    onClick={() => playSongByIndex(index, roomId)}
                                 >
                                     {index + 1}. {audio.name.slice(0, audio.name.length - 4)}
                                 </h4>
                                 <audio
-                                    ref={(audioRef) => (audioControls.current[index] = audioRef)}
+                                    ref={(audioRef) => (audioRefs.current[index] = audioRef)} // Check that this line correctly sets audioRefs
                                     src={`http://localhost:4000/music/getMusic/${audio.uniqueId}`}
                                 />
                             </li>
@@ -281,7 +286,7 @@ function Music() {
                                 <h3>{currentSong}</h3>
                             </div>
                             <br />
-                             <div className="d-flex justify-content-center align-items-center">
+                            <div className="d-flex justify-content-center align-items-center">
                                 <input
                                     type="range"
                                     min="0"
@@ -297,13 +302,13 @@ function Music() {
                             </div>
                             <div className="d-flex justify-content-center align-items-center text-center">
                                 <button
-                                    onClick={() => playPreviousSong()}
+                                    onClick={playPreviousSong}
                                     className="play-button bg-light"
                                 >
                                     <BsSkipStartFill />
                                 </button>
                                 <button
-                                    onClick={() => togglePlayPause()}
+                                    onClick={togglePlayPause}
                                     className="play-button bg-light"
                                 >
                                     {isPlaying ? (
@@ -313,13 +318,13 @@ function Music() {
                                     )}
                                 </button>
                                 <button
-                                    onClick={() => playNextSong()}
+                                    onClick={playNextSong}
                                     className="play-button bg-light"
                                 >
                                     <BsSkipEndFill />
                                 </button>
                                 <button
-                                    onClick={() => stopAndHideAudioControls()} // Stop and hide audio controls
+                                    onClick={stopAndHideAudioControls}
                                     className="stop-button bg-light"
                                 >
                                     <BsFillXCircleFill />
