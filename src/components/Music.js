@@ -3,16 +3,10 @@ import { Modal, Button, Form } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { uploadAudio, fetchAllAudio } from '../redux/actions/musicActions';
 import { useNavigate } from 'react-router-dom';
-import {
-    BsPlayCircleFill,
-    BsFillPauseCircleFill,
-    BsSkipStartFill,
-    BsSkipEndFill,
-    BsFillXCircleFill,
-} from 'react-icons/bs';
 import { AiFillPlusCircle } from 'react-icons/ai';
+import Player from './Player';
 
-function Music({ socket, roomId, currentSongIndex, setCurrentSongIndex }) {
+function Music({ socket, roomId }) {
     const navigate = useNavigate();
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -24,39 +18,59 @@ function Music({ socket, roomId, currentSongIndex, setCurrentSongIndex }) {
     const [progress, setProgress] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [totalDuration, setTotalDuration] = useState(0);
-    // const [currentSongIndex, setCurrentSongIndex] = useState(null);
+    const [currentSongIndex, setCurrentSongIndex] = useState(-1);
     const [showAudioControls, setShowAudioControls] = useState(false);
     const dispatch = useDispatch();
     const audioFiles = useSelector((state) => state.audio.audioFiles);
 
-    const audioRefs = useRef([]); // Use audioRefs instead of audioControls
+    const audioRefs = useRef([]);
+
+    // useEffect(() => {
+    //     dispatch(fetchAllAudio());
+    //     console.log(roomId)
+    //     socket.on('playSong', ({ songIndex, roomId }) => {
+    //         // console.log('Received playSong event:', { songIndex, roomId });
+    //         // console.log({ songIndex, currentSongIndex })
+    //         // console.log(currentSongIndex)
+    //         if (songIndex !== null) {
+    //             // console.log(currentSongIndex)
+    //             // if(currentSongIndex === -1)
+    //             console.log('Emitting playSong event:', { roomId: roomId, songIndex: songIndex });
+    //             // socket.emit('playSong', { roomId: roomId, songIndex: songIndex });
+    //             // setCurrentSongIndex(songIndex);
+    //             // playSongByIndex(songIndex);
+    //             // console.log('After updating currentSongIndex:', currentSongIndex);
+    //             console.log('Received playSong event:', { roomId: roomId, songIndex: songIndex });
+    //         } else {
+    //             console.error(`Received 'playSong' event with null songIndex or the same song in room ${roomId}`);
+    //         }
+    //     });
+
+    //     return () => {
+    //         socket.off('playSong');
+    //     };
+    // }, [currentSongIndex]);
+
 
     useEffect(() => {
-        // Fetch audio files when the component mounts
         dispatch(fetchAllAudio());
-        // Set up Socket.io event listeners
-        console.log(roomId)
-
-        // socket.on('message', ()=>console.log('first'))
+        console.log(roomId);
 
         socket.on('playSong', ({ songIndex, roomId }) => {
-            console.log('Received playSong event:', { songIndex, roomId });
-            console.log({songIndex, currentSongIndex})
-            if (songIndex !== null && songIndex !== currentSongIndex) {
-                // if(currentSongIndex === null)
-                    // playSongByIndex(songIndex);
-                setCurrentSongIndex(songIndex);
+            if (songIndex !== null) {
+                console.log('Received playSong event:', { roomId: roomId, songIndex: songIndex });
+                setCurrentSongIndex(songIndex); // Update the currentSongIndex
+                playSongByIndex(songIndex); // Call playSongByIndex with the received songIndex
             } else {
                 console.error(`Received 'playSong' event with null songIndex or the same song in room ${roomId}`);
             }
         });
-    
-        // Clean up the event listener when the component unmounts
+
         return () => {
             socket.off('playSong');
         };
-    }, []);
-    
+    }, [currentSongIndex]);
+
 
     const handleFileChange = (e) => {
         setSelectedFile(e.target.files[0]);
@@ -92,73 +106,71 @@ function Music({ socket, roomId, currentSongIndex, setCurrentSongIndex }) {
     };
 
     const playSongByIndex = (index) => {
-        console.log('playSongByIndex called with index:', index);
-        console.log('currentSongIndex:', currentSongIndex);
-        console.log(roomId)
+        console.log('Before updating currentSongIndex:', currentSongIndex);
         if (currentSongIndex === index) {
             return;
         }
-    
-        // Pause the currently playing audio (if any)
+
         if (currentAudio) {
             currentAudio.pause();
         }
-    
+
         const audio = audioRefs.current[index];
-    
+
         if (audio) {
             setCurrentAudio(audio);
             setCurrentSong(audioFiles[index]?.name || '');
-    
+
             const onPlaying = () => {
                 setIsLoading(false);
                 setTotalDuration(audio.duration);
                 audio.removeEventListener('playing', onPlaying);
             };
-    
+
             const onEnded = () => {
                 setCurrentSong('');
                 setIsPlaying(false);
                 setCurrentTime(0);
-    
-                // Play the next song if available
+
                 const nextIndex = currentSongIndex + 1;
                 if (nextIndex < audioFiles.length) {
-                    // playSongByIndex(/nextIndex);
+                    // playSongByIndex(nextIndex);
                 }
-    
+
                 audio.removeEventListener('ended', onEnded);
             };
-    
+
             const onTimeUpdate = () => {
                 setProgress((audio.currentTime / audio.duration) * 100);
                 setCurrentTime(audio.currentTime);
             };
-    
+
             audio.addEventListener('playing', onPlaying);
             audio.addEventListener('ended', onEnded);
             audio.addEventListener('timeupdate', onTimeUpdate);
-    
-            // Play the selected audio if it's loaded
+
+            try {
             if (audio.readyState >= 2) {
-                audio.play();
-                setIsPlaying(true);
-            } else {
-                // If the audio is not loaded, add an event listener to play it when it's ready
-                audio.addEventListener('canplay', () => {
                     audio.play();
                     setIsPlaying(true);
-                });
+                } else {
+                    audio.addEventListener('canplay', () => {
+                        audio.play();
+                        setIsPlaying(true);
+                    });
+                }
+            } catch (error) {
+               console.log(error)
             }
-    
+
             setShowAudioControls(true);
-    
-            // Emit the 'playSong' event to all participants in the same room
+
             console.log('Emitting playSong event:', { roomId: roomId, songIndex: index });
             socket.emit('playSong', { roomId: roomId, songIndex: index });
         }
     };
-    
+
+
     const togglePlayPause = () => {
         if (currentAudio) {
             if (isPlaying) {
@@ -268,7 +280,7 @@ function Music({ socket, roomId, currentSongIndex, setCurrentSongIndex }) {
                                     {index + 1}. {audio.name.slice(0, audio.name.length - 4)}
                                 </h4>
                                 <audio
-                                    ref={(audioRef) => (audioRefs.current[index] = audioRef)} // Check that this line correctly sets audioRefs
+                                    ref={(audioRef) => (audioRefs.current[index] = audioRef)}
                                     src={`http://localhost:4000/music/getMusic/${audio.uniqueId}`}
                                 />
                             </li>
@@ -279,63 +291,22 @@ function Music({ socket, roomId, currentSongIndex, setCurrentSongIndex }) {
                 </ul>
             </div>
             {showAudioControls && (
-                <div className="card position-fixed bottom-0 audio-controls p-3 pe-5 bg-light">
-                    {currentSong && (
-                        <div>
-                            <div className="d-flex justify-content-center align-items-center">
-                                <h3>{currentSong}</h3>
-                            </div>
-                            <br />
-                            <div className="d-flex justify-content-center align-items-center">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={progress}
-                                    onChange={handleProgressChange}
-                                    className="w-100"
-                                />
-                            </div>
-                            <div className="d-flex justify-content-between align-items-center">
-                                <span>{formatTime(currentTime)}</span>
-                                <span>{formatTime(totalDuration)}</span>
-                            </div>
-                            <div className="d-flex justify-content-center align-items-center text-center">
-                                <button
-                                    onClick={playPreviousSong}
-                                    className="play-button bg-light"
-                                >
-                                    <BsSkipStartFill />
-                                </button>
-                                <button
-                                    onClick={togglePlayPause}
-                                    className="play-button bg-light"
-                                >
-                                    {isPlaying ? (
-                                        <BsFillPauseCircleFill />
-                                    ) : (
-                                        <BsPlayCircleFill />
-                                    )}
-                                </button>
-                                <button
-                                    onClick={playNextSong}
-                                    className="play-button bg-light"
-                                >
-                                    <BsSkipEndFill />
-                                </button>
-                                <button
-                                    onClick={stopAndHideAudioControls}
-                                    className="stop-button bg-light"
-                                >
-                                    <BsFillXCircleFill />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                    {isLoading && <p>Loading...</p>}
-                </div>
+                <Player
+                    currentSong={currentSong}
+                    isPlaying={isPlaying}
+                    progress={progress}
+                    currentTime={currentTime}
+                    totalDuration={totalDuration}
+                    playPreviousSong={playPreviousSong}
+                    togglePlayPause={togglePlayPause}
+                    playNextSong={playNextSong}
+                    stopAndHideAudioControls={stopAndHideAudioControls}
+                    formatTime={formatTime}
+                    isLoading={isLoading}
+                    handleProgressChange={handleProgressChange}
+                />
             )}
-        </div>
+        </div >
     );
 }
 

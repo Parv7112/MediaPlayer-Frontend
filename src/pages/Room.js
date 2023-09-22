@@ -13,7 +13,6 @@ function RoomPage() {
   const [socket, setSocket] = useState(null);
   const [initial, setInitial] = useState(true)
   const [socketReady, setSocketReady] = useState(false);
-  const [currentSongIndex, setCurrentSongIndex] = useState(null);
 
   useEffect(() => {
     if (roomId && initial) {
@@ -74,7 +73,7 @@ function RoomPage() {
         </nav>
         <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
           <h1 className='text-center mt-2'>{name} - {roomId}</h1>
-          {socketReady && <Music socket={socket} roomId={roomId} {...{currentSongIndex, setCurrentSongIndex}} />} {/* Render Music component when socket is ready */}
+          {socketReady && <Music socket={socket} roomId={roomId} />} {/* Render Music component when socket is ready */}
         </main>
       </div>
     </div>
