@@ -72,3 +72,8 @@
 .pointer {
     cursor: pointer;
 }
+
+.banner{
+    width: 98%;
+    height: 500px;
+}
